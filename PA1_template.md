@@ -7,7 +7,8 @@ output:
 
 Pre-requisites.
 
-```{r, echo=TRUE}
+
+```r
 library(scales)
 library(ggplot2)
 ```
@@ -17,7 +18,8 @@ library(ggplot2)
 There is no need to process the date (string) or interval (integer)
 columns in the data as yet.
 
-```{r, cache=TRUE}
+
+```r
 unzip("activity.zip")
 activity <- read.table("activity.csv",
 					   sep = ",", stringsAsFactors = FALSE, header = TRUE)
@@ -26,15 +28,17 @@ activity <- read.table("activity.csv",
 ## What is mean total number of steps taken per day?
 
 
-```{r}
+
+```r
 daily <- aggregate(steps ~ date, data = activity, FUN = sum)
 ```
 
-Discarding incomplete rows, the mean is `r as.integer(mean(daily$steps))` 
+Discarding incomplete rows, the mean is 10766 
 (green dashed line in plot),
-and the median is `r as.integer(median(daily$steps))`.
+and the median is 10765.
 
-```{r}
+
+```r
 qplot(steps, data = daily, geom = "histogram", binwidth = 1000) +
 	ggtitle("Histogram of Daily Total Steps") +
 	xlab("Number of steps") +
@@ -42,9 +46,12 @@ qplot(steps, data = daily, geom = "histogram", binwidth = 1000) +
 			   colour="green", linetype = "longdash")
 ```
 
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png) 
+
 ## What is the average daily activity pattern?
 
-```{r}
+
+```r
 ave.day <- aggregate(steps ~ interval, data = activity, FUN = mean)
 max.steps <- max(ave.day$steps)
 # Interval with max.steps. (Happens that this is unique.)
@@ -53,10 +60,11 @@ msi <- ave.day$interval[which(ave.day$steps == max.steps)]
 i.to.t <- function(i) { paste(i %/% 100, i %% 100, sep = ":") }
 ```
 
-The maximum number of steps in the average day was `r round(max.steps)`, 
-contained in the single interval starting at `r i.to.t(msi)`.
+The maximum number of steps in the average day was 206, 
+contained in the single interval starting at 8:35.
 
-```{r}
+
+```r
 # Use an artificial date to construct a POSIXct for plotting.
 ave.day$time <- as.POSIXct(paste0("2000-01-01 ", i.to.t(ave.day$interval)))
 qplot(time, steps, data = ave.day, geom="line") +
@@ -65,21 +73,25 @@ qplot(time, steps, data = ave.day, geom="line") +
 	scale_x_datetime(labels = date_format("%H:%M"), breaks = "2 hour")
 ```
 
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png) 
+
 ## Imputing missing values
 
-```{r}
+
+```r
 num_c <- nrow(activity)
 num_cc <- sum(complete.cases(activity))
 num_ci <- num_c - num_cc
 ```
 
-The number of rows with missing data is `r num_ci`.
+The number of rows with missing data is 2304.
 
 Fill in missing steps values by rounding the steps value
 for the corresponding interval in the average day.
 The offset function turns an interval value into the correct index of ave.day.
 
-```{r}
+
+```r
 offset <- function(i) { 
 	hours <- (i %/% 100) 
 	minutes <- (i %% 100)
@@ -92,13 +104,14 @@ imp.act$steps[missing] <- round(ave.day$steps[offset(imp.act$interval[missing])]
 imp.daily <- aggregate(steps ~ date, data = imp.act, FUN = sum)
 ```
 
-Working with imputed data, the mean is `r as.integer(mean(imp.daily$steps))`,
-and the median is `r as.integer(median(imp.daily$steps))`.
+Working with imputed data, the mean is 10765,
+and the median is 10762.
 The difference from the same measures in the uncorrected data is small.
 However, imputing values as above seems to reduce the variability in the data,
 as seen in the following plot.
 
-```{r}
+
+```r
 qplot(steps, data = imp.daily, geom = "histogram", binwidth = 1000) +
 	ggtitle("Histogram of Daily Total Steps") +
 	xlab("Number of steps") +
@@ -106,11 +119,14 @@ qplot(steps, data = imp.daily, geom = "histogram", binwidth = 1000) +
 			   colour = "green", linetype = "longdash")
 ```
 
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png) 
+
 ## Are there differences in activity patterns between weekdays and weekends?
 
 Data preparation.
 
-```{r}
+
+```r
 weekend.days <- c("Sat", "Sun")
 is.weekend <- function(aString) { 
 	weekdays(as.Date(aString), TRUE) %in% weekend.days
@@ -127,7 +143,8 @@ But I have included it because it seems to be what he asked for.
 Here is a similar plot, translating interval to time, using the same technique
 as above.
 
-```{r}
+
+```r
 aves.by.int.dt <- aggregate(steps ~ interval * daytype, imp.act, FUN="mean")
 qplot(interval, steps, data = aves.by.int.dt,
 	  facets = daytype ~ .,
@@ -136,8 +153,11 @@ qplot(interval, steps, data = aves.by.int.dt,
 	ggtitle("Comparison of weekdays and weekends by interval") 
 ```
 
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11-1.png) 
 
-```{r}
+
+
+```r
 aves.by.int.dt$time <-
 	as.POSIXct(paste0("2000-01-01 ", i.to.t(aves.by.int.dt$interval)))
 qplot(time, steps, data = aves.by.int.dt, 
@@ -146,6 +166,7 @@ qplot(time, steps, data = aves.by.int.dt,
 	ggtitle("Comparison of weekdays and weekends by interval") +
 	ylab("Number of steps") +
 	scale_x_datetime(labels = date_format("%H:%M"), breaks = "2 hour")
-
 ```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png) 
 
